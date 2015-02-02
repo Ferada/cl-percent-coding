@@ -28,14 +28,10 @@
 
 (in-package #:cl-user)
 
-(asdf:defsystem #:cl-percent-coding
-  :description "Read/write percent encoded strings."
-  :long-description "Read and write percent encoded values, such as URL parameters via streams, byte vectors and strings."
-  :author "Olof-Joachim Frahm <olof@macrolet.net>"
-  :license "Simplified BSD License"
-  :depends-on (#:iterate)
+(asdf:defsystem #:cl-percent-coding-tests
+  :depends-on (#:cl-percent-coding #:fiveam)
   :serial T
-  :components ((:module "src"
+  :components ((:module "tests"
                 :components
                 ((:file "package")
                  (:file "decode")))))
