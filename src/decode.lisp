@@ -67,21 +67,37 @@ is done via the given EXTERNAL-FORMAT."
          (flexi-streams:get-output-stream-sequence octet-stream))
         (T (error "unknown OUTPUT-ELEMENT-TYPE ~A" output-element-type)))))))
 
-(defun url-encode (string &key (start 0)
-                               (end (length string))
-                               (external-format *default-external-format*)
-                               (output-element-type 'character))
+(defun url-encode (input &key (start 0)
+                              (end (length input))
+                              (external-format *default-external-format*)
+                              (output-element-type 'character))
   (let ((result
-         (with-output-to-string (stream)
-           (iterate
-             (for byte in-vector (flexi-streams:string-to-octets string :external-format external-format :start start :end end))
-             (format stream "%~2,'0x" byte)))))
+          (with-output-to-string (stream)
+            (cond
+              ((stringp input)
+               (iterate
+                 (for index from start below end)
+                 (for char = (char input index))
+                 ;; TODO: make these a bit configurable
+                 (if (or (char<= #\a char #\z)
+                         (char<= #\A char #\Z)
+                         (char<= #\0 char #\9)
+                         (find char "-_.~"))
+                     (write-char char stream)
+                     (iterate
+                       ;; TODO: oh god
+                       (for byte in-vector (flexi-streams:string-to-octets (string char) :external-format external-format :end 1))
+                       (format stream "%~2,'0x" byte)))))
+              ((vectorp input)
+               (iterate
+                 (for byte in-vector input)
+                 (format stream "%~2,'0x" byte)))))))
     (cond
-     ((eq output-element-type 'character)
-      result)
-     ((equal output-element-type '(unsigned-byte 8))
-      (flexi-streams:string-to-octets result :external-format external-format))
-     (T (error "unknown OUTPUT-ELEMENT-TYPE ~A" output-element-type)))))
+      ((eq output-element-type 'character)
+       result)
+      ((equal output-element-type '(unsigned-byte 8))
+       (flexi-streams:string-to-octets result :external-format external-format))
+      (T (error "unknown OUTPUT-ELEMENT-TYPE ~A" output-element-type)))))
 
 ;; TODO: allow sequence (of characters or bytes) as source
 ;; TODO: allow stream (of characters or bytes) as source
