@@ -34,4 +34,5 @@
   :components ((:module "tests"
                 :components
                 ((:file "package")
+                 (:file "suite")
                  (:file "decode")))))

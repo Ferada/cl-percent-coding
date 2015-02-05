@@ -33,9 +33,16 @@
   :long-description "Read and write percent encoded values, such as URL parameters via streams, byte vectors and strings."
   :author "Olof-Joachim Frahm <olof@macrolet.net>"
   :license "Simplified BSD License"
+  :version "0.0.1"
+  #+asdf-unicode :encoding #+asdf-unicode :utf-8
   :depends-on (#:iterate)
+  :in-order-to ((asdf:test-op (asdf:load-op #:cl-percent-coding-tests)))
+  :perform (asdf:test-op :after (op c)
+             (funcall (find-symbol (symbol-name '#:run!) '#:fiveam)
+                      (find-symbol (symbol-name '#:cl-percent-coding) '#:cl-percent-coding-tests)))
   :serial T
-  :components ((:module "src"
+  :components ((:static-file "README.md")
+               (:module "src"
                 :components
                 ((:file "package")
                  (:file "decode")))))
