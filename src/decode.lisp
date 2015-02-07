@@ -37,7 +37,8 @@
 (defun url-decode (string &key (start 0)
                                (end (length string))
                                (external-format *default-external-format*)
-                               (output-element-type 'character))
+                               (output-element-type 'character)
+                               x-www-form-urlencoded-p)
   "Decodes STRING as a percent encoded URL.  Returns a new STRING as
 result if OUTPUT-ELEMENT-TYPE is set to CHARACTER.  Decoding to characters
 is done via the given EXTERNAL-FORMAT."
@@ -50,6 +51,9 @@ is done via the given EXTERNAL-FORMAT."
        (let ((code (parse-integer string :start (1+ index) :end (+ index 3) :radix 16)))
          (write-byte code octet-stream)
          (incf index 2)))
+      ((and x-www-form-urlencoded-p
+            (char= character #\+))
+       (write-byte #.(char-code #\Space) octet-stream))
       (T
        (write-sequence
         (flexi-streams:string-to-octets
@@ -70,7 +74,8 @@ is done via the given EXTERNAL-FORMAT."
 (defun url-encode (input &key (start 0)
                               (end (length input))
                               (external-format *default-external-format*)
-                              (output-element-type 'character))
+                              (output-element-type 'character)
+                              x-www-form-urlencoded-p)
   (let ((result
           (with-output-to-string (stream)
             (cond
@@ -79,15 +84,20 @@ is done via the given EXTERNAL-FORMAT."
                  (for index from start below end)
                  (for char = (char input index))
                  ;; TODO: make these a bit configurable
-                 (if (or (char<= #\a char #\z)
-                         (char<= #\A char #\Z)
-                         (char<= #\0 char #\9)
-                         (find char "-_.~"))
-                     (write-char char stream)
-                     (iterate
-                       ;; TODO: oh god
-                       (for byte in-vector (flexi-streams:string-to-octets (string char) :external-format external-format :end 1))
-                       (format stream "%~2,'0x" byte)))))
+                 (cond
+                   ((or (char<= #\a char #\z)
+                        (char<= #\A char #\Z)
+                        (char<= #\0 char #\9)
+                        (find char "-_.~"))
+                    (write-char char stream))
+                   ((and x-www-form-urlencoded-p
+                         (char= char #\Space))
+                    (write-char #\+ stream))
+                   (T
+                    (iterate
+                      ;; TODO: oh god
+                      (for byte in-vector (flexi-streams:string-to-octets (string char) :external-format external-format :end 1))
+                      (format stream "%~2,'0x" byte))))))
               ((vectorp input)
                (iterate
                  (for byte in-vector input)
