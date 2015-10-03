@@ -48,6 +48,8 @@ is done via the given EXTERNAL-FORMAT."
     (for character = (char string index))
     (cond
       ((char= character #\%)
+       (when (> (+ index 3) end)
+         (error "Out of bounds access."))
        (let ((code (parse-integer string :start (1+ index) :end (+ index 3) :radix 16)))
          (write-byte code octet-stream)
          (incf index 2)))
@@ -62,14 +64,20 @@ is done via the given EXTERNAL-FORMAT."
         octet-stream)))
     (finally
      (return
-       (cond
-        ((eq output-element-type 'character)
-         (flexi-streams:octets-to-string
-          (flexi-streams:get-output-stream-sequence octet-stream)
-          :external-format external-format))
-        ((equal output-element-type '(unsigned-byte 8))
-         (flexi-streams:get-output-stream-sequence octet-stream))
-        (T (error "unknown OUTPUT-ELEMENT-TYPE ~A" output-element-type)))))))
+       (let ((is-character-p (eq output-element-type 'character)))
+         (cond
+           ((or is-character-p
+                (eq output-element-type 'base-char))
+            (let ((result
+                    (flexi-streams:octets-to-string
+                     (flexi-streams:get-output-stream-sequence octet-stream)
+                     :external-format external-format)))
+              (if is-character-p
+                  result
+                  (coerce result 'base-string))))
+           ((equal output-element-type '(unsigned-byte 8))
+            (flexi-streams:get-output-stream-sequence octet-stream))
+           (T (error "Unknown ~A ~A." 'output-element-type output-element-type))))))))
 
 (defun url-encode (input &key (start 0)
                               (end (length input))
@@ -102,12 +110,16 @@ is done via the given EXTERNAL-FORMAT."
                (iterate
                  (for byte in-vector input)
                  (format stream "%~2,'0x" byte)))))))
-    (cond
-      ((eq output-element-type 'character)
-       result)
-      ((equal output-element-type '(unsigned-byte 8))
-       (flexi-streams:string-to-octets result :external-format external-format))
-      (T (error "unknown OUTPUT-ELEMENT-TYPE ~A" output-element-type)))))
+    (let ((is-character-p (eq output-element-type 'character)))
+      (cond
+        ((or is-character-p
+             (eq output-element-type 'base-char))
+         (if is-character-p
+             result
+             (coerce result 'base-string)))
+        ((equal output-element-type '(unsigned-byte 8))
+         (flexi-streams:string-to-octets result :external-format external-format))
+        (T (error "Unknown ~A ~A." 'output-element-type output-element-type))))))
 
 ;; TODO: allow sequence (of characters or bytes) as source
 ;; TODO: allow stream (of characters or bytes) as source

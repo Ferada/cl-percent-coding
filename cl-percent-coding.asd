@@ -35,7 +35,7 @@
   :license "Simplified BSD License"
   :version "0.0.1"
   #+asdf-unicode :encoding #+asdf-unicode :utf-8
-  :depends-on (#:iterate)
+  :depends-on (#:iterate #:flexi-streams)
   :in-order-to ((asdf:test-op (asdf:load-op #:cl-percent-coding-tests)))
   :perform (asdf:test-op :after (op c)
              (funcall (find-symbol (symbol-name '#:run!) '#:fiveam)

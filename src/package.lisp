@@ -29,6 +29,6 @@
 (in-package #:cl-user)
 
 (defpackage #:cl-percent-coding
-  (:use #:cl #:iterate #:trivial-gray-streams)
+  (:use #:cl #:iterate)
   (:export
    #:url-decode #:url-encode))

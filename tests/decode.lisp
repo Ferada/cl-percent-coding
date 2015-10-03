@@ -41,8 +41,19 @@
 (def-test too-short ()
   "Truncated encoded values signal."
   (signals error (url-decode "%"))
-  (signals error (url-decode "%2")))
+  (signals error (url-decode "%2"))
+  (signals error (url-decode "%42" :end 1))
+  (signals error (url-decode "%42" :end 2)))
 
 (def-test invalid ()
   "Invalid encodings signal."
   (signals error (url-decode "%%")))
+
+(def-test output-types ()
+  "Output types are recognised."
+  (is (typep (url-encode "foo") 'string))
+  (is (typep (url-encode "foo" :output-element-type 'base-char) 'base-string))
+  (is (typep (url-encode "foo" :output-element-type '(unsigned-byte 8)) '(vector (unsigned-byte 8))))
+  (is (typep (url-decode "foo") 'string))
+  (is (typep (url-decode "foo" :output-element-type 'base-char) 'base-string))
+  (is (typep (url-decode "foo" :output-element-type '(unsigned-byte 8)) '(vector (unsigned-byte 8)))))
